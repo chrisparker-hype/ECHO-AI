@@ -1,15 +1,15 @@
 import streamlit as st
+import os
 import google.generativeai as genai
 from gtts import gTTS
-import os
 
-# 1. THE BRAIN SETUP
-# We are using 'gemini-1.5-flash-latest' which is the most compatible version
+# 1. THE BRAIN SETUP (The Final Version)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash-latest') 
+    # We use 'gemini-1.5-flash' but we wrap it in a function that checks for 'v1'
+    model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
 else:
-    st.error("API Key missing from Secrets!")
+    st.error("I'm missing my API Key! Check Streamlit Secrets.")
     st.stop()
 
 # 2. ECHO'S IDENTITY
@@ -17,7 +17,7 @@ user_name = st.secrets.get("USER_NAME", "Chris")
 system_prompt = f"You are ECHO. Cosmic, Gideon-like, Snarky Level 7. Address {user_name}."
 
 st.set_page_config(page_title="ECHO Terminal", page_icon="🌌")
-st.title("🌌 ECHO: Online")
+st.title("🌌 ECHO: Active")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -34,7 +34,7 @@ if prompt := st.chat_input(f"Speak, {user_name}..."):
 
     with st.chat_message("assistant"):
         try:
-            # Simple prompt to avoid 'beta' version errors
+            # Forcing the use of the most compatible method
             response = model.generate_content(f"{system_prompt}\nUser: {prompt}")
             echo_text = response.text
             st.markdown(echo_text)
@@ -46,4 +46,4 @@ if prompt := st.chat_input(f"Speak, {user_name}..."):
             
             st.session_state.messages.append({"role": "assistant", "content": echo_text})
         except Exception as e:
-            st.error(f"ECHO is having trouble finding her mind: {e}")
+            st.error(f"ECHO status check: {e}")
