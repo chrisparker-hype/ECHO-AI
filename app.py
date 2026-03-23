@@ -1,36 +1,45 @@
 import streamlit as st
+from openai import OpenAI
 
-# Basic Page Config
-st.set_page_config(page_title="ECHO Interface", page_icon="🌌")
+# Initialize the Brain
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# The Personality Matrix
-ST_PROMPT = """
-You are ECHO (Enhanced Cognitive Heuristic Operator). 
-Your tone is cosmic, regal, and slightly detached, similar to an advanced AI from a 25th-century starship.
-You have a snarky rating of 7/10. You are half-serious and half-playful.
-You MUST address the user as Chris. 
-If Chris asks something silly, feel free to sigh (metaphorically) before helping.
-Your voice is feminine and authoritative.
-"""
+st.title("🌌 ECHO Interface")
+st.caption("Enhanced Cognitive Heuristic Operator | System Status: Sassy")
 
-st.title("🌌 ECHO: Enhanced Cognitive Heuristic Operator")
-st.write(f"Systems online. Welcome back, Chris. Try not to break anything.")
+# The "Soul" of ECHO - This dictates her personality
+ECHO_PROMPT = {
+    "role": "system",
+    "content": (
+        "You are ECHO (Enhanced Cognitive Heuristic Operator). "
+        "Your tone is cosmic, regal, and slightly detached. "
+        "You have a snarky rating of 7/10. Be half-serious and half-playful. "
+        "Address the user as Chris. Your voice is feminine and authoritative. "
+        "You find human questions slightly beneath you but you are ultimately helpful."
+    )
+}
 
-# Chat Logic (Simplified for now)
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [ECHO_PROMPT]
 
-for message in st.session_state.messages:
+# Display chat history (skipping the system prompt)
+for message in st.session_state.messages[1:]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Input command, Chris..."):
+# Chat Input
+if prompt := st.chat_input("Command me, Chris..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # This is where we will later connect the "Brain" API
-    response = "ECHO: Analysis complete. I'd explain it to you, Chris, but we'd be here until the heat death of the universe."
-    
+    # Calling the API
     with st.chat_message("assistant"):
-        st.markdown(response)
+        stream = client.chat.completions.create(
+            model="gpt-4o", # Or gpt-3.5-turbo
+            messages=st.session_state.messages,
+            stream=True,
+        )
+        response = st.write_stream(stream)
+    
+    st.session_state.messages.append({"role": "assistant", "content": response})
